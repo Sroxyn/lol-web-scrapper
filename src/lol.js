@@ -6,34 +6,63 @@ module.exports = {
     if(!hero)return console.error("You Must specify a Hero")
     if(!lang)return console.error("You Must specify a Language only (tr,en)")
     let url;
+    let url2 = `https://mobatr.net/sampiyon/${encodeURI(hero)}/counter-ct`
+    let url3;
     if(lang === 'tr'){
-        url = `https://tr.leagueoflegends.com/tr-tr/champions/${hero}/`
+        url = `https://tr.leagueoflegends.com/tr-tr/champions/${encodeURI(hero)}/`
+        url3 = `https://www.leagueofgraphs.com/tr/champions/builds/${encodeURI(hero)}`
     }
     else if(lang === 'en'){
-        url = `https://na.leagueoflegends.com/en-us/champions/${hero}/`
+        url = `https://na.leagueoflegends.com/en-us/champions/${encodeURI(hero)}/`
+        url3 = `https://www.leagueofgraphs.com/en/champions/builds/${encodeURI(hero)}`
     }else return console.error("You must specify a valid language only(tr,en)")
 
+    var all = {}
     const response = await request(url);
+    const response2 = await request(url2)
+    const response3 = await request(url3)
     const $ = cheerio.load(response);
-        this.title = $('strong[class="style__Title-sc-14gxj1e-3 iLTyui"] > span').text()
+    const $$ = cheerio.load(response2);
+    const $$$ = cheerio.load(response3);
+    let kostum_link = $('div[class="style__Slideshow-sc-1tlyqoa-2 gUBieu"]').children('div').children('div').children('img')
+    let kostum_ad = $('div[class="swiper-wrapper"]').children('li').children('button').children('label')
+    
+
+    var skin_resim = []
+    var skin_link = []
+    var zayıf_oldugu = [];
+    var best_plays = []
+    var started_Item = []
+    
+    kostum_ad.each(function(i, x) { skin_resim[i] = $(x).text()});
+    kostum_link.each(function(i, x) { skin_link[i] = $(x).attr('src')});
+
+    $$('div[class="c-guides__list list-unstyled"]').children('div').each(function(i, element){
+       zayıf_oldugu[i] = $$(element).find('a').text()
+    })
+
+    $$$('table[class="data_table overviewChampionBestPlayers"]').children('tbody').children('tr').each(function(i,element){
+        best_plays[i] = $$$(element).find('span').eq(0).text().trim()
+    })
+    $$$('div[class="iconsRow"]').children('div').each(function(i,element){
+        started_Item[i] = $$$(element).find('img').attr('alt')
+    })
+
+        this.title = $('strong[class="style__Title-sc-14gxj1e-3 iLTyui"]').find('span').text()
         this.description = $('span[class="style__Intro-sc-14gxj1e-2 fmCNnE"]').children('div').children('span').text()
         this.hero_image = $('div[class="style__ForegroundAsset-sc-1o884zt-4 cVdVkh"]').children('img').attr('src') 
         this.hardness = $('ul[class="style__SpecsList-sc-1o884zt-11 mFnFm"]').children('li').eq(1).children('div').eq(2).text()
         this.rol = $('ul[class="style__SpecsList-sc-1o884zt-11 mFnFm"]').children('li').eq(0).children('div').eq(2).text()
-        let kostum_link = $('div[class="style__Slideshow-sc-1tlyqoa-2 gUBieu"]').children('div').children('div').children('img')
-        let kostum_ad = $('div[class="swiper-wrapper"]').children('li').children('button').children('label')
-  
-        var skin_resim = []
-        var skin_link = []
-
-        kostum_ad.each(function(i, x) { skin_resim[i] = $(x).text()});
-        kostum_link.each(function(i, x) { skin_link[i] = $(x).attr('src')});
-
-
-        this.skins = [
-            skin_resim,skin_link
-        ]
-
+        this.Weaknes = zayıf_oldugu.slice(0,5)
+        this.Strong = zayıf_oldugu.slice(5,10)
+        this.bestPlayers = best_plays.slice(1,5)
+        this.Winrate = $$$('div[class="medium-24 columns"]').children('div').children('div').eq(0).children('div').eq(1).children('div').children('div').text().trim().slice(0,5)
+        this.banRate = $$$('div[class="medium-24 columns"]').children('div').children('div').eq(0).children('div').eq(2).children('div').children('div').text().trim().slice(0,5)
+        this.StartedItems = started_Item.slice(3,6)
+        this.coreBuild = started_Item.slice(7,10)
+        this.boots = started_Item.slice(10,11)
+        this.endBuild = started_Item.slice(11,14)
+        this.skins = [ skin_resim,skin_link ]
         this.passive_skil = {
             title: $('ol[class="style__AbilityInfoList-ulelzu-7 kAlIxD"]').children('li').eq(0).children('h5').text(),
             desc: $('ol[class="style__AbilityInfoList-ulelzu-7 kAlIxD"]').children('li').eq(0).children('p').text(),
